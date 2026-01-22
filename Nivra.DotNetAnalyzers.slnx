@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.CodeFixes/Nivra.DotNetAnalyzers.CodeFixes.csproj" />
   <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.Package/Nivra.DotNetAnalyzers.Package.csproj" />
   <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.Test/Nivra.DotNetAnalyzers.Test.csproj" />
