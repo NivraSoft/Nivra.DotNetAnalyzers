@@ -1,0 +1,1 @@
+# Nivra.DotNetAnalyzers
