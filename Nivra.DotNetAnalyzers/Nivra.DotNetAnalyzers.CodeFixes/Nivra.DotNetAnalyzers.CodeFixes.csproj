@@ -6,6 +6,16 @@
     <RootNamespace>Nivra.DotNetAnalyzers</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Nivra.DotNetAnalyzers.CodeFixes</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>NivraSoft</Authors>
+    <Description>A Roslyn code fix provider for Nivra.DotNetAnalyzers.</Description>
+    <PackageTags>Roslyn CodeFix</PackageTags>
+    <PackageOutputPath>$(SolutionDir)\artifacts</PackageOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.3.1" />
   </ItemGroup>
