@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.CodeFixes/Nivra.DotNetAnalyzers.CodeFixes.csproj" />
+  <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.Package/Nivra.DotNetAnalyzers.Package.csproj" />
+  <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.Test/Nivra.DotNetAnalyzers.Test.csproj" />
+  <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.Vsix/Nivra.DotNetAnalyzers.Vsix.csproj" />
+  <Project Path="Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers/Nivra.DotNetAnalyzers.csproj" />
+</Solution>
