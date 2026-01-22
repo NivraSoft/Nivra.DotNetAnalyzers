@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Nivra.DotNetAnalyzers
 {
@@ -31,23 +32,43 @@ namespace Nivra.DotNetAnalyzers
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
-            // TODO: Consider registering other actions that act on syntax instead of or in addition to symbols
-            // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
-            context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
+            // Register a syntax node action for method declarations and invocations
+            context.RegisterSyntaxNodeAction(AnalyzeSyntaxNode, SyntaxKind.MethodDeclaration, SyntaxKind.InvocationExpression);
         }
 
-        private static void AnalyzeSymbol(SymbolAnalysisContext context)
+        private void AnalyzeSyntaxNode(SyntaxNodeAnalysisContext context)
         {
-            // TODO: Replace the following code with your own analysis, generating Diagnostic objects for any issues you find
-            var namedTypeSymbol = (INamedTypeSymbol)context.Symbol;
+            var node = context.Node;
 
-            // Find just those named type symbols with names containing lowercase letters.
-            if (namedTypeSymbol.Name.ToCharArray().Any(char.IsLower))
+            // Analyze both method declarations and invocation expressions
+            if (node is BaseMethodDeclarationSyntax methodDeclaration)
             {
-                // For all such symbols, produce a diagnostic.
-                var diagnostic = Diagnostic.Create(Rule, namedTypeSymbol.Locations[0], namedTypeSymbol.Name);
+                AnalyzeParameters(context, methodDeclaration.ParameterList.Parameters);
+            }
+            else if (node is InvocationExpressionSyntax invocation)
+            {
+                AnalyzeParameters(context, invocation.ArgumentList.Arguments);
+            }
+        }
 
-                context.ReportDiagnostic(diagnostic);
+        private void AnalyzeParameters(SyntaxNodeAnalysisContext context, SeparatedSyntaxList<SyntaxNode> parameters)
+        {
+            if (parameters.Count > 1)
+            {
+                foreach (var pair in parameters.Zip(parameters.Skip(1), (first, second) => (first, second)))
+                {
+                    var firstLine = pair.first.GetLocation().GetLineSpan().EndLinePosition.Line;
+                    var secondLine = pair.second.GetLocation().GetLineSpan().StartLinePosition.Line;
+                    if (firstLine == secondLine)
+                    {
+                        // Report diagnostic for each pair of parameters/arguments on the same line
+                        var diagnosticLocation = Location.Create(
+                            context.Node.SyntaxTree,
+                            TextSpan.FromBounds(pair.first.SpanStart, pair.second.Span.End));
+                        var diagnostic = Diagnostic.Create(Rule, diagnosticLocation);
+                        context.ReportDiagnostic(diagnostic);
+                    }
+                }
             }
         }
     }

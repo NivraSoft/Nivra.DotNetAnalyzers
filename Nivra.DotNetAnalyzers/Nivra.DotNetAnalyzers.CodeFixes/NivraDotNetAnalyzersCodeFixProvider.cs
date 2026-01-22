@@ -33,39 +33,104 @@ namespace Nivra.DotNetAnalyzers
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-            // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
             var diagnostic = context.Diagnostics.First();
             var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-            // Find the type declaration identified by the diagnostic.
-            var declaration = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+            // Find the node identified by the diagnostic
+            var node = root.FindNode(diagnosticSpan);
 
-            // Register a code action that will invoke the fix.
+            // Register a code action that will invoke the fix
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: CodeFixResources.CodeFixTitle,
-                    createChangedSolution: c => MakeUppercaseAsync(context.Document, declaration, c),
-                    equivalenceKey: nameof(CodeFixResources.CodeFixTitle)),
+                    title: "Place each parameter on a new line",
+                    createChangedDocument: c => FormatParametersAsync(context.Document, node, c),
+                    equivalenceKey: "PlaceEachParameterOnNewLine"),
                 diagnostic);
         }
 
-        private async Task<Solution> MakeUppercaseAsync(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
+        private async Task<Document> FormatParametersAsync(Document document, SyntaxNode node, CancellationToken cancellationToken)
         {
-            // Compute new uppercase name.
-            var identifierToken = typeDecl.Identifier;
-            var newName = identifierToken.Text.ToUpperInvariant();
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
 
-            // Get the symbol representing the type to be renamed.
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
+            SyntaxNode newRoot = null;
+            string indent = "";
 
-            // Produce a new solution that has all references to that type renamed, including the declaration.
-            var originalSolution = document.Project.Solution;
-            var optionSet = originalSolution.Workspace.Options;
-            var newSolution = await Renamer.RenameSymbolAsync(document.Project.Solution, typeSymbol, newName, optionSet, cancellationToken).ConfigureAwait(false);
+            // Always walk up to the parent method or invocation if node is a parameter/argument or their list
+            if (node is ParameterSyntax param && node.Parent is ParameterListSyntax plist && plist.Parent is BaseMethodDeclarationSyntax method)
+            {
+                indent = method.GetLeadingTrivia().ToString();
+                var formattedParameters = FormatParameters(plist.Parameters, indent);
+                var newMethod = method.WithParameterList(plist.WithParameters(formattedParameters));
+                newRoot = root.ReplaceNode(method, newMethod);
+            }
+            else if (node is ArgumentSyntax arg && node.Parent is ArgumentListSyntax alist && alist.Parent is InvocationExpressionSyntax invocation)
+            {
+                indent = invocation.GetLeadingTrivia().ToString();
+                var formattedArguments = FormatParameters(alist.Arguments, indent);
+                var newInvocation = invocation.WithArgumentList(alist.WithArguments(formattedArguments));
+                newRoot = root.ReplaceNode(invocation, newInvocation);
+            }
+            else if (node is ParameterListSyntax parameterList && parameterList.Parent is BaseMethodDeclarationSyntax parentMethod)
+            {
+                indent = parentMethod.GetLeadingTrivia().ToString();
+                var formattedParameters = FormatParameters(parameterList.Parameters, indent);
+                var newMethod = parentMethod.WithParameterList(parameterList.WithParameters(formattedParameters));
+                newRoot = root.ReplaceNode(parentMethod, newMethod);
+            }
+            else if (node is ArgumentListSyntax argumentList && argumentList.Parent is InvocationExpressionSyntax parentInvocation)
+            {
+                indent = parentInvocation.GetLeadingTrivia().ToString();
+                var formattedArguments = FormatParameters(argumentList.Arguments, indent);
+                var newInvocation = parentInvocation.WithArgumentList(argumentList.WithArguments(formattedArguments));
+                newRoot = root.ReplaceNode(parentInvocation, newInvocation);
+            }
+            else if (node is BaseMethodDeclarationSyntax methodDeclaration)
+            {
+                indent = methodDeclaration.GetLeadingTrivia().ToString();
+                var formattedParameters = FormatParameters(methodDeclaration.ParameterList.Parameters, indent);
+                var newMethod = methodDeclaration.WithParameterList(methodDeclaration.ParameterList.WithParameters(formattedParameters));
+                newRoot = root.ReplaceNode(methodDeclaration, newMethod);
+            }
+            else if (node is InvocationExpressionSyntax invocationExpr)
+            {
+                // Use the parent node's leading trivia to calculate indentation
+                indent = invocationExpr.GetLeadingTrivia().ToString();
 
-            // Return the new solution with the now-uppercase type name.
-            return newSolution;
+                // Format the arguments to place each on a new line with proper indentation
+                var formattedArgs = invocationExpr.ArgumentList.Arguments.Select((argument, index) =>
+                    argument.WithLeadingTrivia(
+                        SyntaxFactory.ElasticCarriageReturnLineFeed,    
+                        SyntaxFactory.Whitespace(indent + "    ")
+                    )
+                ).ToList();
+
+                // Replace the argument list with the formatted arguments
+                var newInvocation = invocationExpr.WithArgumentList(
+                    invocationExpr.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(formattedArgs, invocationExpr.ArgumentList.Arguments.GetSeparators()))
+                );
+
+                // Replace the invocation expression in the syntax tree
+                newRoot = root.ReplaceNode(invocationExpr, newInvocation);
+            }
+
+            if (newRoot == null)
+                return document;
+
+            return document.WithSyntaxRoot(newRoot);
+        }
+
+        private SeparatedSyntaxList<T> FormatParameters<T>(SeparatedSyntaxList<T> parameters, string indent) where T : SyntaxNode
+        {
+            if (!parameters.Any())
+                return parameters;
+
+            // Place the first parameter on a new line after the opening parenthesis
+            var formattedParameters = parameters.Select((p, i) =>
+                i == 0
+                    ? p.WithLeadingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed, SyntaxFactory.Whitespace(indent + "    "))
+                    : p.WithLeadingTrivia(SyntaxFactory.ElasticCarriageReturnLineFeed, SyntaxFactory.Whitespace(indent + "    "))
+            ).ToList();
+            return SyntaxFactory.SeparatedList(formattedParameters, parameters.GetSeparators());
         }
     }
 }

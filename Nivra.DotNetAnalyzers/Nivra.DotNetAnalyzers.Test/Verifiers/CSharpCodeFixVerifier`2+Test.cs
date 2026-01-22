@@ -2,6 +2,8 @@
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing.Verifiers;
+using System;
+using System.Reflection;
 
 namespace Nivra.DotNetAnalyzers.Test
 {

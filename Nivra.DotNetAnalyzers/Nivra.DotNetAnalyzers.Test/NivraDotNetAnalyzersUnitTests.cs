@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VerifyCS = Nivra.DotNetAnalyzers.Test.CSharpCodeFixVerifier<
     Nivra.DotNetAnalyzers.NivraDotNetAnalyzersAnalyzer,
@@ -9,50 +10,84 @@ namespace Nivra.DotNetAnalyzers.Test
     [TestClass]
     public class NivraDotNetAnalyzersUnitTest
     {
-        //No diagnostics expected to show up
+        // No diagnostics expected to show up
         [TestMethod]
         public async Task TestMethod1()
         {
-            var test = @"";
+            var test = @"          ";
 
             await VerifyCS.VerifyAnalyzerAsync(test);
         }
 
-        //Diagnostic and CodeFix both triggered and checked for
         [TestMethod]
-        public async Task TestMethod2()
+        public async Task NoDiagnosticForProperlyFormattedParameters()
         {
             var test = @"
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
 
-    namespace ConsoleApplication1
+    class TestClass
     {
-        class {|#0:TypeName|}
-        {   
+        void TestMethod(
+            int param1,
+            string param2)
+        {
+        }
+
+        void AnotherMethod()
+        {
+            TestMethod(
+                1,
+                ""test"");
+        }
+    }";
+
+            await VerifyCS.VerifyAnalyzerAsync(test);
+        }
+
+        [TestMethod]
+        public async Task DiagnosticAndFixForImproperlyFormattedParameters()
+        {
+            var test = @"
+    using System;
+
+    class TestClass
+    {
+        void TestMethod(int param1, string param2) { }
+
+        void AnotherMethod()
+        {
+            TestMethod(0, ""test"");
         }
     }";
 
             var fixtest = @"
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
 
-    namespace ConsoleApplication1
+    class TestClass
     {
-        class TYPENAME
-        {   
+        void TestMethod(
+            int param1,
+            string param2) { }
+
+        void AnotherMethod()
+        {
+            TestMethod(
+                0,
+                ""test"");
         }
     }";
 
-            var expected = VerifyCS.Diagnostic("NivraDotNetAnalyzers").WithLocation(0).WithArguments("TypeName");
+            var expected = new DiagnosticResult[]
+            {
+                VerifyCS.Diagnostic("NivraDotNetAnalyzers")
+                    .WithMessage("Parameters should be on separate lines")
+                    .WithSpan(10, 24, 10, 33),
+                VerifyCS.Diagnostic("NivraDotNetAnalyzers")
+                    .WithMessage("Parameters should be on separate lines")
+                    .WithSpan(6, 25, 6, 50),
+            };
+
+            //await VerifyCS.VerifyAnalyzerAsync(test, expected);
             await VerifyCS.VerifyCodeFixAsync(test, expected, fixtest);
         }
     }
