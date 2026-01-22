@@ -1,4 +1,3 @@
 # Nivra.DotNetAnalyzers
 
-![NivraDotNetAnalyzersDemo](https://github.com/user-attachments/assets/44823d75-768c-485b-9e3e-376357ac4966)
-
+![Untitled video - Made with Clipchamp (1) (1)](https://github.com/user-attachments/assets/32f00b00-48c5-4021-9603-6d9bcd856b03)
