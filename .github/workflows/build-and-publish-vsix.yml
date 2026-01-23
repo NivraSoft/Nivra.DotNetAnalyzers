@@ -47,7 +47,7 @@ jobs:
         echo "::set-output name=vsix_path::$VSIX_OUTPUT_PATH"
         
     - name: Upload VSIX as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: VSIX-Artifact
+        name: VSIX-Artifact-${{ matrix.runs-on }}
         path: ${{ steps.find-vsix.outputs.vsix_path }}
