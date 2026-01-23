@@ -35,10 +35,6 @@ jobs:
       run: |
         dotnet test .\Nivra.DotNetAnalyzers\Nivra.DotNetAnalyzers.Test\Nivra.DotNetAnalyzers.Test.csproj --configuration Release --no-restore --verbosity normal
 
-    - name: Install VSIX Publisher
-      run: |
-        choco install visualstudiovsixinstaller --yes
-
     - name: Find VSIX file
       id: find-vsix
       env:

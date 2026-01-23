@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".gitattributes" />
+    <File Path=".github/workflows/build-and-publish-vsix.yml" />
     <File Path=".github/workflows/dotnet-desktop.yml" />
     <File Path=".gitignore" />
     <File Path="LICENSE.txt" />
