@@ -37,6 +37,7 @@ jobs:
 
     - name: Find VSIX file
       id: find-vsix
+      shell: bash
       env:
         VSIX_OUTPUT_PATH: $(find . -name '*.vsix' | head -n 1)
       run: |
