@@ -24,9 +24,12 @@ jobs:
     - name: Restore NuGet packages
       run: dotnet restore
 
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
     - name: Build solution with MSBuild
       run: |
-        msbuild .\Nivra.DotNetAnalyzers\Nivra.DotNetAnalyzers.Vsix /p:Configuration=Release
+        msbuild .\Nivra.DotNetAnalyzers\Nivra.DotNetAnalyzers.Vsix -t:rebuild -verbosity:diag /p:Configuration=Release
 
     - name: Run unit tests
       run: dotnet test --no-build --configuration Release --verbosity normal
