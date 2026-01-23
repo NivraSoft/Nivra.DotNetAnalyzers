@@ -31,8 +31,9 @@ jobs:
       run: |
         msbuild .\Nivra.DotNetAnalyzers\Nivra.DotNetAnalyzers.Vsix -t:rebuild -verbosity:diag /p:Configuration=Release
 
-    - name: Run unit tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+    - name: Build and Run Tests
+      run: |
+        dotnet test .\Nivra.DotNetAnalyzers\Nivra.DotNetAnalyzers.Test\Nivra.DotNetAnalyzers.Test.csproj --configuration Release --no-restore --verbosity normal
 
     - name: Install VSIX Publisher
       run: |
