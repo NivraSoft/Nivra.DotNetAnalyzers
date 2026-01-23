@@ -38,17 +38,17 @@ jobs:
     - name: Find VSIX file
       id: find-vsix
       shell: bash
-      env:
-        VSIX_OUTPUT_PATH: $(find . -name '*.vsix' | head -n 1)
       run: |
+        VSIX_OUTPUT_PATH=$(find . -name '*.vsix' | head -n 1)
         if [ -z "$VSIX_OUTPUT_PATH" ]; then
           echo "No VSIX file found."
           exit 1
         fi
-        echo "::set-output name=vsix_path::$VSIX_OUTPUT_PATH"
-        
+        echo "VSIX file found: $VSIX_OUTPUT_PATH"
+        echo "vsix_path=$VSIX_OUTPUT_PATH" >> $GITHUB_ENV
+
     - name: Upload VSIX as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: VSIX-Artifact-${{ matrix.runs-on }}
-        path: ${{ steps.find-vsix.outputs.vsix_path }}
+        name: VSIX-Artifact
+        path: ${{ env.vsix_path }}
