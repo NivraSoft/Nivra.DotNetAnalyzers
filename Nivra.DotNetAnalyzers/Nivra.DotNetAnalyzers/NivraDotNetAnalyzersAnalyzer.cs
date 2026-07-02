@@ -23,7 +23,7 @@ namespace Nivra.DotNetAnalyzers
         private static readonly LocalizableString Description = new LocalizableResourceString(nameof(Resources.AnalyzerDescription), Resources.ResourceManager, typeof(Resources));
         private const string Category = "Naming";
 
-        private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+        private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Info, isEnabledByDefault: true, description: Description);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
 
@@ -57,14 +57,19 @@ namespace Nivra.DotNetAnalyzers
             {
                 foreach (var pair in parameters.Zip(parameters.Skip(1), (first, second) => (first, second)))
                 {
-                    var firstLine = pair.first.GetLocation().GetLineSpan().EndLinePosition.Line;
-                    var secondLine = pair.second.GetLocation().GetLineSpan().StartLinePosition.Line;
-                    if (firstLine == secondLine)
+                    var syntaxTree = context.Node.SyntaxTree;
+                    var text = syntaxTree.GetText(context.CancellationToken);
+
+                    // Get the line where the first parameter is located
+                    var line = text.Lines[pair.first.GetLocation().GetLineSpan().StartLinePosition.Line];
+
+                    // Check if the line length exceeds 100 characters
+                    if (line.ToString().Length > 100)
                     {
-                        // Report diagnostic for each pair of parameters/arguments on the same line
+                        // Report diagnostic for the line exceeding 100 characters
                         var diagnosticLocation = Location.Create(
-                            context.Node.SyntaxTree,
-                            TextSpan.FromBounds(pair.first.SpanStart, pair.second.Span.End));
+                            syntaxTree,
+                            TextSpan.FromBounds(line.Start, line.End));
                         var diagnostic = Diagnostic.Create(Rule, diagnosticLocation);
                         context.ReportDiagnostic(diagnostic);
                     }
